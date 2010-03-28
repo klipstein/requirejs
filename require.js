@@ -96,7 +96,7 @@ var require;
             return require.get(deps, callback);
         }
 
-        //Do more work, either 
+        //Do more work, either
         return require.def.apply(require, arguments);
     };
 
@@ -209,7 +209,8 @@ var require;
                     "require": true
                 },
                 defined: {},
-                modifiers: {}
+                modifiers: {},
+                alternatives: {}
             };
 
             //Define require for this context.
@@ -600,6 +601,51 @@ var require;
     };
     //>>excludeEnd("requireExcludeModify");
 
+    //>>excludeStart("requireExcludeAlter");
+    /**
+     * Register files that should be loaded alternatively instead of 
+     * the requested module. Allowing a more granular/flexible module
+     * system where you are able to completely overwrite a module with
+     * other files.
+     *
+     * require.alter({
+     *     "some/target1": "some/alternative_target1",
+     *     "some/target2": "some/alternative_target2",
+     * });
+     *
+     * With this syntax, the some/alternative_target1 will be loaded 
+     * if "some/target1" is required.
+     *
+     * Within the file some/alternative_target1 you then need to define the
+     * namespace some/target1 that is overwritten.
+     *
+     * require.def("some/target1", ["some/other"],
+     *     function (other) {
+     *         var myModule = {};
+     *         // define your new some/target1 module here
+     *         return myModule;
+     * });
+     */
+    require.alter = function(targets) {
+        var prop, alternative, list,
+            cName =  s.ctxName,
+            context = s.contexts[cName];
+
+        //A list of alternative files to load. Save them for future reference.
+        for (prop in targets) {
+            if (!(prop in empty)) {
+                //Store the alternative for future use.
+                alternative = targets[prop];
+                list = context.alternatives[prop] || (context.alternatives[prop] = []);
+                if (!list[alternative]) {
+                    list.push(alternative);
+                    list[alternative] = true;
+                }
+            }
+        }
+    };
+    //>>excludeEnd("requireExcludeAlter");
+
     require.isArray = function (it) {
         return ostring.call(it) === "[object Array]";
     };
@@ -644,6 +690,19 @@ var require;
      */
     require.load = function (moduleName, contextName) {
         var context = s.contexts[contextName], url;
+        //>>excludeStart("requireExcludeAlter");
+        var alternatives = context.alternatives,
+            otherMods, i, l;
+        // Maybe we need to load alternative files for that module (see require.alter())
+        if(moduleName in alternatives) {
+            otherMods = alternatives[moduleName];
+            for(i = 0, l = otherMods.length;i<l;i++){
+                require.load(otherMods[i], contextName);
+            }
+            return;
+        }
+        //>>excludeEnd("requireExcludeAlter");
+
         s.isDone = false;
         context.loaded[moduleName] = false;
         //>>excludeStart("requireExcludeContext", pragmas.requireExcludeContext);
