@@ -286,6 +286,14 @@ var require;
             }
             //>>excludeEnd("requireExcludePageLoad");
 
+            //it is possible to mixin modifiers / alternatives via the config object
+            //>>excludeStart("requireExcludeModify", pragmas.requireExcludeModify);
+            require.alter(config.modifiers);
+            //>>excludeEnd("requireExcludeModify");
+            //>>excludeStart("requireExcludeAlter", pragmas.requireExcludeAlter);
+            require.alter(config.alternatives);
+            //>>excludeEnd("requireExcludeAlter");
+
             //If it is just a config block, nothing else,
             //then return.
             if (!deps) {
@@ -601,7 +609,7 @@ var require;
     };
     //>>excludeEnd("requireExcludeModify");
 
-    //>>excludeStart("requireExcludeAlter");
+    //>>excludeStart("requireExcludeAlter", pragmas.requireExcludeAlter);
     /**
      * Register files that should be loaded alternatively instead of 
      * the requested module. Allowing a more granular/flexible module
@@ -690,7 +698,7 @@ var require;
      */
     require.load = function (moduleName, contextName) {
         var context = s.contexts[contextName], url;
-        //>>excludeStart("requireExcludeAlter");
+        //>>excludeStart("requireExcludeAlter", pragmas.requireExcludeAlter);
         var alternatives = context.alternatives,
             otherMods, i, l;
         // Maybe we need to load alternative files for that module (see require.alter())
