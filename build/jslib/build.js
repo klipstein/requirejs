@@ -95,6 +95,7 @@ var build;
                         buildPaths[prop] = prop.replace(/\./g, "/");
                         //Copy files to build area. Copy all files (the /\w/ regexp)
                         fileUtil.copyDir(paths[prop], config.dirBaseUrl + buildPaths[prop], /\w/, true);
+<<<<<<< HEAD
                         try {
                             fileUtil.copyFile(paths[prop] + ".js", config.dirBaseUrl + buildPaths[prop] + ".js", false);
                         } catch (e) {};
