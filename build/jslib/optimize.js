@@ -34,11 +34,11 @@ var optimize;
     //Assumes the string will be in a single quote string value.
     function jsEscape(text) {
         return text.replace(/(['\\])/g, '\\$1')
-            .replace(/\f/g, "\\f")
-            .replace(/\b/g, "\\b")
-            .replace(/\n/g, "\\n")
-            .replace(/\t/g, "\\t")
-            .replace(/\r/g, "\\r");
+            .replace(/[\f]/g, "\\f")
+            .replace(/[\b]/g, "\\b")
+            .replace(/[\n]/g, "\\n")
+            .replace(/[\t]/g, "\\t")
+            .replace(/[\r]/g, "\\r");
     }
 
     /**
@@ -73,7 +73,12 @@ var optimize;
             //Make a file path based on the last slash.
             //If no slash, so must be just a file name. Use empty string then.
             filePath = (endIndex !== -1) ? fileName.substring(0, endIndex + 1) : "";
-    
+
+        //Make sure we have a delimited ignore list to make matching faster
+        if (cssImportIgnore && cssImportIgnore.charAt(cssImportIgnore.length - 1) !== ",") {
+            cssImportIgnore += ",";
+        }
+
         return fileContents.replace(cssImportRegExp, function (fullMatch, urlStart, importFileName, urlEnd, mediaTypes) {
             //Only process media type "all" or empty media type rules.
             if (mediaTypes && ((mediaTypes.replace(/^\s\s*/, '').replace(/\s\s*$/, '')) !== "all")) {
@@ -203,59 +208,102 @@ var optimize;
         },
 
         /**
+         * Optimizes a file that contains JavaScript content. It will inline
+         * text plugin files and run it through Google Closure Compiler
+         * minification, if the config options specify it.
+         *
+         * @param {String} fileName the name of the file to optimize
+         * @param {String} outFileName the name of the file to use for the
+         * saved optimized content.
+         * @param {Object} config the build config object.
+         */
+        jsFile: function (fileName, outFileName, config) {
+            var doClosure = (config.optimize + "").indexOf("closure") === 0,
+                fileContents;
+
+            if (config.inlineText && !optimize.textLoaded) {
+                //Make sure text extension is loaded.
+                require(["require/text"]);
+                optimize.textLoaded = true;
+            }
+
+            fileContents = fileUtil.readFile(fileName);
+
+            //Inline text files.
+            if (config.inlineText) {
+                fileContents = optimize.inlineText(fileName, fileContents);
+            }
+
+            //Optimize the JS files if asked.
+            if (doClosure) {
+                fileContents = optimize.closure(fileName,
+                                               fileContents,
+                                               (config.optimize.indexOf(".keepLines") !== -1));
+            }
+
+            fileUtil.saveUtf8File(outFileName, fileContents);
+        },
+
+        /**
+         * Optimizes one CSS file, inlining @import calls, stripping comments, and
+         * optionally removes line returns.
+         * @param {String} fileName the path to the CSS file to optimize
+         * @param {String} outFileName the path to save the optimized file.
+         * @param {Object} config the config object with the optimizeCss and
+         * cssImportIgnore options.
+         */
+        cssFile: function (fileName, outFileName, config) {
+            //Read in the file. Make sure we have a JS string.
+            var originalFileContents = fileUtil.readFile(fileName),
+                fileContents = flattenCss(fileName, originalFileContents, config.cssImportIgnore),
+                startIndex, endIndex;
+
+            //Do comment removal.
+            try {
+                startIndex = -1;
+                //Get rid of comments.
+                while ((startIndex = fileContents.indexOf("/*")) !== -1) {
+                    endIndex = fileContents.indexOf("*/", startIndex + 2);
+                    if (endIndex === -1) {
+                        throw "Improper comment in CSS file: " + fileName;
+                    }
+                    fileContents = fileContents.substring(0, startIndex) + fileContents.substring(endIndex + 2, fileContents.length);
+                }
+                //Get rid of newlines.
+                if (config.optimizeCss.indexOf(".keepLines") === -1) {
+                    fileContents = fileContents.replace(/[\r\n]/g, "");
+                    fileContents = fileContents.replace(/\s+/g, " ");
+                    fileContents = fileContents.replace(/\{\s/g, "{");
+                    fileContents = fileContents.replace(/\s\}/g, "}");
+                } else {
+                    //Remove multiple empty lines.
+                    fileContents = fileContents.replace(/(\r\n)+/g, "\r\n");
+                    fileContents = fileContents.replace(/(\n)+/g, "\n");
+                }
+            } catch (e) {
+                fileContents = originalFileContents;
+                logger.error("Could not optimized CSS file: " + fileName + ", error: " + e);
+            }
+
+            fileUtil.saveUtf8File(outFileName, fileContents);
+        },
+
+        /**
          * Optimizes CSS files, inlining @import calls, stripping comments, and
          * optionally removes line returns.
          * @param {String} startDir the path to the top level directory
-         * @param {String} optimizeType, the config's optimizeCss value.
-         * @param {String} a comma-separated list of paths to not @import inline.
+         * @param {Object} config the config object with the optimizeCss and
+         * cssImportIgnore options.
          */
-        css: function (startDir, optimizeType, cssImportIgnore) {
-            if (optimizeType.indexOf("standard") !== -1) {
-                //Make sure we have a delimited ignore list to make matching faster
-                if (cssImportIgnore) {
-                    cssImportIgnore = cssImportIgnore + ",";
-                }
-    
+        css: function (startDir, config) {
+            if (config.optimizeCss.indexOf("standard") !== -1) {
                 var i, fileName, startIndex, endIndex, originalFileContents, fileContents,
                     fileList = fileUtil.getFilteredFileList(startDir, /\.css$/, true);
                 if (fileList) {
                     for (i = 0; i < fileList.length; i++) {
                         fileName = fileList[i];
-                        logger.trace("Optimizing (" + optimizeType + ") CSS file: " + fileName);
-                        
-                        //Read in the file. Make sure we have a JS string.
-                        originalFileContents = fileUtil.readFile(fileName);
-                        fileContents = flattenCss(fileName, originalFileContents, cssImportIgnore);
-        
-                        //Do comment removal.
-                        try {
-                            startIndex = -1;
-                            //Get rid of comments.
-                            while ((startIndex = fileContents.indexOf("/*")) !== -1) {
-                                endIndex = fileContents.indexOf("*/", startIndex + 2);
-                                if (endIndex === -1) {
-                                    throw "Improper comment in CSS file: " + fileName;
-                                }
-                                fileContents = fileContents.substring(0, startIndex) + fileContents.substring(endIndex + 2, fileContents.length);
-                            }
-                            //Get rid of newlines.
-                            if (optimizeType.indexOf(".keepLines") === -1) {
-                                fileContents = fileContents.replace(/[\r\n]/g, "");
-                                fileContents = fileContents.replace(/\s+/g, " ");
-                                fileContents = fileContents.replace(/\{\s/g, "{");
-                                fileContents = fileContents.replace(/\s\}/g, "}");
-                            } else {
-                                //Remove multiple empty lines.
-                                fileContents = fileContents.replace(/(\r\n)+/g, "\r\n");
-                                fileContents = fileContents.replace(/(\n)+/g, "\n");
-                            }
-                        } catch (e) {
-                            fileContents = originalFileContents;
-                            logger.error("Could not optimized CSS file: " + fileName + ", error: " + e);
-                        }
-            
-                        //Write out the file with appropriate copyright.
-                        fileUtil.saveUtf8File(fileName, fileContents);
+                        logger.trace("Optimizing (" + config.optimizeCss + ") CSS file: " + fileName);
+                        optimize.cssFile(fileName, fileName, config)
                     }
                 }
             }
