@@ -34,9 +34,22 @@ readFile: false, pragma: false, Packages: false, parse: false */
             contents, i, deps, matchName, matchDeps, depAry,
             invalidDep = false, unquotedMatchName,
             context = require.s.contexts[contextName],
-            previouslyDefined = context.defined[moduleName];
+            previouslyDefined = context.defined[moduleName],
+            alternatives = context.alternatives,
+            modifiers = context.modifiers,
+            otherMods, i, l;
         context.loaded[moduleName] = false;
 
+        // Maybe we need to load alternative files for that module (see require.alter())
+        if(moduleName in alternatives) {
+            otherMods = alternatives[moduleName];
+            for(i = 0, l = otherMods.length;i<l;i++){
+                require.load(otherMods[i], contextName);
+                require.execCb(otherMods[i]);
+            }
+            return;
+        }
+        
         //Save the module name to path mapping.
         map = require.buildPathMap[moduleName] = url;
 

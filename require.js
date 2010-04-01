@@ -225,6 +225,9 @@ var require;
                 modify: makeContextFunc("modify", contextName),
                 def: makeContextFunc("def", contextName),
                 //>>excludeEnd("requireExcludeModify");
+                //>>excludeStart("requireExcludeAlter", pragmas.requireExcludeAlter);
+                alter: makeContextFunc("alter", contextName),
+                //>>excludeEnd("requireExcludeAlter");
                 get: makeContextFunc("get", contextName, true),
                 nameToUrl: makeContextFunc("nameToUrl", contextName, true),
                 ready: require.ready,
@@ -288,7 +291,7 @@ var require;
 
             //it is possible to mixin modifiers / alternatives via the config object
             //>>excludeStart("requireExcludeModify", pragmas.requireExcludeModify);
-            require.alter(config.modifiers);
+            require.modify(config.modifiers);
             //>>excludeEnd("requireExcludeModify");
             //>>excludeStart("requireExcludeAlter", pragmas.requireExcludeAlter);
             require.alter(config.alternatives);
