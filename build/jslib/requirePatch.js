@@ -42,14 +42,14 @@ readFile: false, pragma: false, Packages: false, parse: false */
             invalidDep = false, unquotedMatchName,
             context = require.s.contexts[contextName],
             previouslyDefined = context.defined[moduleName],
-            alternatives = context.alternatives,
+            replacements = context.replacements,
             modifiers = context.modifiers,
             otherMods, i, l;
         context.loaded[moduleName] = false;
 
-        // Maybe we need to load alternative files for that module (see require.alter())
-        if(moduleName in alternatives) {
-            otherMods = alternatives[moduleName];
+        // Maybe we need to load alternative files for that module (see requirejs())
+        if(moduleName in replacements) {
+            otherMods = replacements[moduleName];
             for(i = 0, l = otherMods.length;i<l;i++){
                 require.load(otherMods[i], contextName);
                 require.execCb(otherMods[i]);

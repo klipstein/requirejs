@@ -210,7 +210,7 @@ var require;
                 },
                 defined: {},
                 modifiers: {},
-                alternatives: {}
+                replacements: {}
             };
 
             //Define require for this context.
@@ -226,7 +226,7 @@ var require;
                 def: makeContextFunc("def", contextName),
                 //>>excludeEnd("requireExcludeModify");
                 //>>excludeStart("requireExcludeAlter", pragmas.requireExcludeAlter);
-                alter: makeContextFunc("alter", contextName),
+                replace: makeContextFunc("replace", contextName),
                 //>>excludeEnd("requireExcludeAlter");
                 get: makeContextFunc("get", contextName, true),
                 nameToUrl: makeContextFunc("nameToUrl", contextName, true),
@@ -289,12 +289,12 @@ var require;
             }
             //>>excludeEnd("requireExcludePageLoad");
 
-            //it is possible to mixin modifiers / alternatives via the config object
+            //it is possible to mixin modifiers / replacements via the config object
             //>>excludeStart("requireExcludeModify", pragmas.requireExcludeModify);
             require.modify(config.modifiers);
             //>>excludeEnd("requireExcludeModify");
             //>>excludeStart("requireExcludeAlter", pragmas.requireExcludeAlter);
-            require.alter(config.alternatives);
+            require["replace"](config.replacements);
             //>>excludeEnd("requireExcludeAlter");
 
             //If it is just a config block, nothing else,
@@ -621,15 +621,15 @@ var require;
      * system where you are able to completely overwrite a module with
      * other files.
      *
-     * require.alter({
-     *     "some/target1": "some/alternative_target1",
-     *     "some/target2": "some/alternative_target2",
+     * require.replace({
+     *     "some/target1": "some/replaced_target1",
+     *     "some/target2": "some/replaced_target2",
      * });
      *
-     * With this syntax, the some/alternative_target1 will be loaded 
+     * With this syntax, the some/replaced_target1 will be loaded 
      * if "some/target1" is required.
      *
-     * Within the file some/alternative_target1 you then need to define the
+     * Within the file some/replaced_target1 you then need to define the
      * namespace some/target1 that is overwritten.
      *
      * require.def("some/target1", ["some/other"],
@@ -639,20 +639,20 @@ var require;
      *         return myModule;
      * });
      */
-    require.alter = function(targets) {
-        var prop, alternative, list,
+    require.replace = function(targets) {
+        var prop, replacement, list,
             cName =  s.ctxName,
             context = s.contexts[cName];
 
         //A list of alternative files to load. Save them for future reference.
         for (prop in targets) {
             if (!(prop in empty)) {
-                //Store the alternative for future use.
-                alternative = targets[prop];
-                list = context.alternatives[prop] || (context.alternatives[prop] = []);
-                if (!list[alternative]) {
-                    list.push(alternative);
-                    list[alternative] = true;
+                //Store the replacement for future use.
+                replacement = targets[prop];
+                list = context.replacements[prop] || (context.replacements[prop] = []);
+                if (!list[replacement]) {
+                    list.push(replacement);
+                    list[replacement] = true;
                 }
             }
         }
@@ -704,11 +704,11 @@ var require;
     require.load = function (moduleName, contextName) {
         var context = s.contexts[contextName], url;
         //>>excludeStart("requireExcludeAlter", pragmas.requireExcludeAlter);
-        var alternatives = context.alternatives,
+        var replacements = context.replacements,
             otherMods, i, l;
-        // Maybe we need to load alternative files for that module (see require.alter())
-        if(moduleName in alternatives) {
-            otherMods = alternatives[moduleName];
+        // Maybe we need to load replaced files for that module (see require.replace())
+        if(moduleName in replacements) {
+            otherMods = replacements[moduleName];
             for(i = 0, l = otherMods.length;i<l;i++){
                 require.load(otherMods[i], contextName);
             }
