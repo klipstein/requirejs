@@ -11,11 +11,11 @@ cd dist/jquery-require-sample
 # Copy the sample files.
 cp -r ../../webapp ./webapp
 
-# Do a build of requirejs, using the minimum feature set and place it in scripts dir
-cd ../../../../build/require
-./build.sh
-cp build/nomodifypluginspagecontext-require.js ../../docs/jquery-require-sample/dist/jquery-require-sample/webapp/scripts/require.js
-rm -rf build/
+# Do a build of requirejs with jquery
+cd ../../../../build/jquery
+../build.sh require-jquery.build.js
+cp dist/require-jquery.js ../../docs/jquery-require-sample/dist/jquery-require-sample/webapp/scripts/require-jquery.js
+rm -rf dist/
 cd ../../docs/jquery-require-sample/dist/jquery-require-sample
 
 # Copy over the build system for requirejs and basic require files, used by the build.
@@ -24,8 +24,7 @@ mkdir requirejs/build
 cp -r ../../../../build/jslib requirejs/build/jslib
 cp -r ../../../../build/lib requirejs/build/lib
 cp ../../../../build/example.build.js requirejs/build/example.build.js
-# Windows thing not working yet.
-# cp ../../../../build/build.bat requirejs/build/build.bat
+cp ../../../../build/build.bat requirejs/build/build.bat
 cp ../../../../build/build.js requirejs/build/build.js
 cp ../../../../build/build.sh requirejs/build/build.sh
 

@@ -1,22 +1,31 @@
-- Developer page? Code style guidelines?
-- README.md does not work in dist, tree links still there.
+- include i18n and text plugins in node integration. Make sure text plugin works?
+- Do a release
+- Look at jquery ui adapter
 
-- de-dupe plugins?
+- Transport/D support.
 
-- Build option to remove files that are not part of a layer.
-- Right now multiple layers are exclusionary, but they should not be.
+- Expore allowing require("./something") inside function callbacks.
+  - it means a specific require() function for each module asking for require
+  - require.nameToUrl should also allow the relative IDs then.
+
+- require.nameToUrl convertDojo.js for dojo.moduleUrl("dojo", "resources/blank.gif")
+  would be cool to pass require.nameToUrl("dojo/resources/blank.gif") and have that work. Why is .js assumed?
+
+- de-dupe plugins in a build, make sure they are only included once? Or does that work already now with
+  the latest changes?
 
 - Make sure text plugin works offline.
 - Make sure text plugin works in rhino env.
 - Get Blackberry simulator. Blackberry greater than 4.6, and particulary with the Blackberry 9500 simulator (with OS v4.7),
 install and launch Blackberry MDS service simulator before running simulator to get network.
 
+- trying to find path of the file executed, as given to rhino:
+http://groups.google.com/group/jsdoc-2/msg/b1dd2f8991156fa0
+
 - with appName, and no native require, setting path to be outside the baseUrl meant that the require path was really
   relative to the output folder name?
 
 - Use JSDoc to document a full module?
-
-- Fix build.bat on windows.
 
 - loading more than one locale for a page. A locales= option? Need this for full
   Dojo conversion.
