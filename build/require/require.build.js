@@ -76,13 +76,23 @@
         },
         {
             name: "allplugins-require",
-            include: ["require/i18n", "require/text"],
+            include: ["require/i18n", "require/text", "require/jsonp"],
+            includeRequire: true,
+            override: {
+                pragmas: {
+                }
+            }
+        },
+        {
+            name: "transportD-require",
+            include: ["require/i18n", "require/text", "require/jsonp", "require/transportD"],
             includeRequire: true,
             override: {
                 pragmas: {
                 }
             }
         }
+
     ]
 })
 
