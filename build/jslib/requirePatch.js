@@ -52,7 +52,6 @@ readFile: false, pragma: false, Packages: false, parse: false */
             otherMods = replacements[moduleName];
             for(i = 0, l = otherMods.length;i<l;i++){
                 require.load(otherMods[i], contextName);
-                require.execCb(otherMods[i]);
             }
             return;
         }
